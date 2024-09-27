@@ -271,7 +271,7 @@ namespace SendEmails
             }
             catch (Exception ex)
             {
-                HasError = false;
+                HasError = true;
                 DeleteEmail(emailKey,HasError);
             }
             return HasError;
