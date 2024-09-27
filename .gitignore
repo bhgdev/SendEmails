@@ -1,0 +1,8 @@
+*.suo
+*.sln
+/WinUI/app.config
+/.vs
+/Lib
+WinUI/App.config
+/SendEmails/obj
+/SendEmails/bin/Release
