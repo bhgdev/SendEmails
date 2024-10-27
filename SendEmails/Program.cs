@@ -15,14 +15,15 @@ namespace SendEmails
     class Program
     {
         static void Main(string[] args)
-        {           
+        {
             DataTable dtEmailInfo = GetEmail();
-            
+
             if (dtEmailInfo != null && dtEmailInfo.Rows.Count > 0)
-            {               
+            {
                 int emailKey = 0;
                 string emailReceiver = "";
                 string emailCC = "";
+                string emailBCC = "";
                 string emailSubject = "";
                 string emailBody = "";
                 string emailAttachment = "";
@@ -34,7 +35,7 @@ namespace SendEmails
                 int portNo = Int16.Parse(ConfigurationManager.AppSettings["PortNo"]);
 
                 //emailPW = TAUtil.Encoder.Encode("Vugu9584"); /* VnVndTk1ODQ= */
-                emailPW = encryptPW.ToLower() == "true" ? TAUtil.Decoder.Decode(emailPW): emailPW;
+                emailPW = encryptPW.ToLower() == "true" ? TAUtil.Decoder.Decode(emailPW) : emailPW;
 
                 foreach (DataRow dr in dtEmailInfo.Rows)
                 {
@@ -43,7 +44,7 @@ namespace SendEmails
                         emailFrom = "ar@bhglobal.com.sg";
                         emailPW = "pjnrprjkwqyhlkcz";
                         emailDisplayName = "BHG - AR";
-                    } 
+                    }
                     else if ((NEStr(dr["EmailFrom"], "")) == "ADPLFinance")
                     {
                         emailFrom = "finance@athenadynamics.com";
@@ -59,10 +60,11 @@ namespace SendEmails
                     emailKey = NEInt(dr["EmailKey"], "");
                     emailReceiver = NEStr(dr["EmailTo"], "");
                     emailCC = NEStr(dr["EmailCC"], "");
+                    emailBCC = NEStr(dr["EmailBCC"], "");
                     emailSubject = NEStr(dr["EmailSubject"], "");
                     emailBody = NEStr(dr["EmailBody"], "");
                     emailAttachment = NEStr(dr["EmailAttachPath"], "");
-                    SendEmail(emailFrom, emailPW, emailDisplayName, oMSever, portNo, emailReceiver, emailCC, emailSubject, emailBody, emailKey, emailAttachment);
+                    SendEmail(emailFrom, emailPW, emailDisplayName, oMSever, portNo, emailReceiver, emailCC, emailBCC, emailSubject, emailBody, emailKey, emailAttachment);
                 }
             }
 
@@ -87,10 +89,10 @@ namespace SendEmails
                 return dt;
             }
         }
-        static void DeleteEmail(int emailKey, bool hasError  = false)
+        static void DeleteEmail(int emailKey, bool hasError = false)
         {
             using (SqlConnection cn = new SqlConnection(EmailSendingDBConnection))
-            {              
+            {
                 cn.Open();
                 try
                 {
@@ -217,14 +219,15 @@ namespace SendEmails
             }
             return str;
         }
-        static bool SendEmail( string emailFrom, string emailPW, string emailDisplayName, string oMSever, int portNo,
-                               string emailReceiver, string emailCC, string emailSubject, string emailBody, int emailKey, string emailAttachment)
+        static bool SendEmail(string emailFrom, string emailPW, string emailDisplayName, string oMSever, int portNo,
+                               string emailReceiver, string emailCC, string emailBCC, string emailSubject, string emailBody, int emailKey, string emailAttachment)
         {
             bool HasError = false;
             try
             {
                 ServicePointManager.SecurityProtocol = (SecurityProtocolType)(48 | 192 | 768 | 3072);
                 string[] emailCc = emailCC.Split(';');
+                string[] emailBcc = emailBCC.Split(';');
                 string[] emailTo = emailReceiver.Trim().Split(';');
                 string[] fileAttachment = emailAttachment.Trim().Split(';');
 
@@ -234,13 +237,19 @@ namespace SendEmails
                 /* get receiver emails */
                 for (int i = 0; i < emailTo.Length; i++)
                 {
-                    if(emailTo[i] != "") email.To.Add(emailTo[i]);
+                    if (emailTo[i] != "") email.To.Add(emailTo[i]);
                 }
 
                 /* get CC emails */
                 for (int i = 0; i < emailCc.Length; i++)
                 {
                     if (emailCc[i] != "") email.CC.Add(emailCc[i]);
+                }
+
+                /* get BCC emails */
+                for (int i = 0; i < emailBcc.Length; i++)
+                {
+                    if (emailBcc[i] != "") email.Bcc.Add(emailBcc[i]);
                 }
 
                 /* get file attachments */
@@ -252,7 +261,7 @@ namespace SendEmails
                         if (Attachment != null)
                             email.Attachments.Add(Attachment);
                     }
-                }                
+                }
 
                 email.From = new MailAddress(emailFrom, emailDisplayName);
                 email.Subject = emailSubject;
@@ -272,7 +281,7 @@ namespace SendEmails
             catch (Exception ex)
             {
                 HasError = true;
-                DeleteEmail(emailKey,HasError);
+                DeleteEmail(emailKey, HasError);
             }
             return HasError;
         }
@@ -289,7 +298,7 @@ namespace SendEmails
             get
             {
                 return GetDBConnection();
-            }            
+            }
         }
     }
 }
